@@ -2,7 +2,7 @@
 
 This project is to demonstrate a full stack application.
 
-It is built 99.99% in Rust 🦀
+It is built 98% in Rust 🦀
 
 To test it out go to <https://basiccrm.fly.dev>
 
