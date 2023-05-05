@@ -1,0 +1,16 @@
+# flyctl launch added from .gitignore
+target
+**\*.profraw
+**\lcov.info
+
+# flyctl launch added from backend\.gitignore
+backend\target
+backend\**\*.profraw
+backend\**\lcov.info
+
+# flyctl launch added from frontend\.gitignore
+frontend\target
+frontend\dist
+frontend\**\*.profraw
+frontend\**\lcov.info
+fly.toml

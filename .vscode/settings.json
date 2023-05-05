@@ -1,0 +1,11 @@
+{
+    "emmet.includeLanguages": {
+        "rust": "html",
+    },
+    "coverage-gutters.coverageFileNames": [
+        "lcov.info",
+    ],
+    "rust-analyzer.linkedProjects": [
+        ".\\backend\\Cargo.toml",
+    ]
+}

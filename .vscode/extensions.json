@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "ryanluker.vscode-coverage-gutters",
+        "vadimcn.vscode-lldb",
+        "panicbit.cargo",
+        "serayuzgur.crates",
+        "be5invis.toml",
+        "rust-lang.rust-analyzer",
+        "Swellaby.vscode-rust-test-adapter",
+        "usernamehw.errorlens",
+        "magicstack.edgedb"
+    ],
+}

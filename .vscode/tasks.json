@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cargo",
+			"command": "build",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "Build"
+		},
+		{
+			"type": "cargo",
+			"command": "tarpaulin",
+			"args": [
+				"--ignore-tests",
+				"--skip-clean",
+				"--out",
+				"Html",
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "test",
+			"label": "Coverage"
+		}
+	]
+}
