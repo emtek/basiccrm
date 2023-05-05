@@ -77,7 +77,7 @@ Updates to the schema can be made and migrations applied with the following comm
 
 ---
 
-The project is currently hosted on <https://fly.io> with postgres and edgedb in Syndey.
+The project is currently hosted on <https://fly.io> with postgres and edgedb in Sydney.
 
 Before deployment you will need to update the frontend with the following command from the ./frontend directory `trunk build --dist ../backend/dist`
 
