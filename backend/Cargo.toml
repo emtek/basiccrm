@@ -13,9 +13,11 @@ edgedb-derive = "0.4.0"
 edgedb-protocol = "0.4.0"
 edgedb-tokio = "0.3.0"
 frontend = {path = "../frontend"}
+hyper = "0.14.26"
 opentelemetry = {version = "0.17.0", features = ["trace", "rt-tokio"]}
 opentelemetry-otlp = {version = "0.10.0", features = ["http-proto", "reqwest-client", "tokio"]}
 opentelemetry-semantic-conventions = "0.9"
+rand = "0.8.5"
 reqwest = {version = "0.11.16"}
 serde = {version = "1.0.160", features = ["derive"]}
 serde_json = "1.0.96"

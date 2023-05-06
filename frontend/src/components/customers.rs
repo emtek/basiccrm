@@ -1,5 +1,5 @@
 use crate::{
-    components::{nav_bar::Navbar, progress_bar::Progress},
+    components::{error::ComponentError, nav_bar::Navbar, progress_bar::Progress},
     data::*,
     routes::AppRoute,
 };
@@ -67,6 +67,7 @@ pub fn customers_table() -> Html {
             </div>
         </section>
         <section class="section">
+        if let Some(customers) = customers.data.clone() {
             <table class="table is-fullwidth">
             <thead>
             <tr>
@@ -75,7 +76,6 @@ pub fn customers_table() -> Html {
                 <td onclick={toggle_sort(CustomerSortField::Status)}>{"Status"}<SortArrow pagination={*pagination} field={CustomerSortField::Status}/></td>
             </tr>
             </thead>
-            if let Some(customers) = customers.data.clone() {
                         <tbody>
                         {
                             customers.into_iter().map(|p|
@@ -96,10 +96,15 @@ pub fn customers_table() -> Html {
                             }).collect::<Html>()
                         }
                         </tbody>
-            } else {
+
+            </table>
+        } else {
+            if customers.error.is_some() {
+                <ComponentError/>
+            }else{
                 <Progress/>
             }
-            </table>
+        }
         </section>
         </>
     }

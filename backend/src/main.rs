@@ -1,5 +1,6 @@
 use axum::{routing::get_service, Router};
 use customers::customer_routes;
+use edgedb_tokio::RetryOptions;
 use opentelemetry::sdk::trace::{self};
 use opentelemetry::{
     global::{self},
@@ -7,6 +8,7 @@ use opentelemetry::{
     KeyValue,
 };
 use opentelemetry_otlp::WithExportConfig;
+use std::time::Duration;
 use std::{collections::HashMap, env, net::SocketAddr, path::PathBuf};
 use tokio::signal;
 use tower_http::{catch_panic::CatchPanicLayer, services::ServeFile, trace::TraceLayer};
@@ -26,7 +28,10 @@ async fn setup_server() -> Router {
 
     let edge_db = edgedb_tokio::create_client()
         .await
-        .expect("Failed to connect to the DB");
+        .expect("Failed to connect to the DB")
+        .with_retry_options(RetryOptions::default().new(3, |attempt: u32| {
+            Duration::from_millis(10 * attempt.pow(2) as u64)
+        }));
 
     Router::new()
         .fallback(static_files_service)

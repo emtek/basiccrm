@@ -11,10 +11,12 @@ use crate::{
 use uuid::Uuid;
 use validator::Validate;
 use yew::prelude::*;
-use yew_hooks::{use_async, UseAsyncHandle};
+use yew_hooks::{use_async_with_options, UseAsyncHandle, UseAsyncOptions};
 
 use yewdux::prelude::use_store;
 use yewdux_input::InputDispatch;
+
+use super::error::ComponentError;
 
 #[derive(Properties, PartialEq)]
 pub struct CustomerDetailProps {
@@ -82,12 +84,13 @@ fn validation_message(field: &str, state: &Rc<Opportunity>) -> Option<String> {
 #[function_component(CustomerDetail)]
 pub fn customer_detail(props: &CustomerDetailProps) -> Html {
     let id = props.id.clone();
-    let customer: UseAsyncHandle<Customer, _> =
-        use_async(async move { get_data(format!("/customer/{}", id)).await });
-
-    if let Some(customer) = customer.data.clone() {
-        html! {
-            <>
+    let customer: UseAsyncHandle<Customer, _> = use_async_with_options(
+        async move { get_data(format!("/customer/{}", id)).await },
+        UseAsyncOptions::enable_auto(),
+    );
+    html! {
+        <>
+        if let Some(customer) = customer.data.clone() {
             <section class="hero is-primary">
             <Navbar/>
                 <div class="hero-body">
@@ -102,23 +105,24 @@ pub fn customer_detail(props: &CustomerDetailProps) -> Html {
             <section class="section">
                 <CustomerOpportunitiesList id={customer.id}/>
             </section>
-            </>
+        } else {
+            if customer.error.is_some() {
+                <ComponentError/>
+            }else{
+                <PageProgress/>
+            }
         }
-    } else {
-        if !customer.loading {
-            customer.run();
-        }
-        html! {
-            <PageProgress/>
-        }
+        </>
     }
 }
 
 #[function_component(CustomerOpportunitiesList)]
 pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
     let id = props.id.clone();
-    let opportunities =
-        use_async(async move { get_data(format!("/customer/{}/opportunities", id)).await });
+    let opportunities = use_async_with_options(
+        async move { get_data(format!("/customer/{}/opportunities", id)).await },
+        UseAsyncOptions::enable_auto(),
+    );
     let (selected_opportunity, dispatch) = use_store::<Opportunity>();
     let modal_open = use_state(|| false);
 
@@ -220,50 +224,49 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
             Ok(_) => false,
         }
     }
-
-    if let Some(opportunities) = opportunities.data.clone() {
-        html! {
+    html! {
             <>
+        if let Some(opportunities) = opportunities.data.clone() {
             <div class={classes!("modal",modal_visible(*modal_open))}>
-            <div class="modal-background"></div>
-            <div class="modal-card">
-                <header class="modal-card-head">
-                    <p class="modal-card-title">{modal_label(selected_opportunity.clone().name.clone())}</p>
-                    <button onclick={&close_modal} class="delete" aria-label="close"></button>
-                </header>
-                    <section class="modal-card-body">
-                        <div class="field">
-                            <label class="label">{"Name"}</label>
-                            <div class="control">
-                            <input value={dispatch.get().name.clone()} oninput={dispatch.input_mut(|selected_opportunity, text| selected_opportunity.name = text)} class={classes!("input",is_valid("name", &selected_opportunity))} type="text" placeholder="Name"/>
+                <div class="modal-background"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">{modal_label(selected_opportunity.clone().name.clone())}</p>
+                        <button onclick={&close_modal} class="delete" aria-label="close"></button>
+                    </header>
+                        <section class="modal-card-body">
+                            <div class="field">
+                                <label class="label">{"Name"}</label>
+                                <div class="control">
+                                <input value={dispatch.get().name.clone()} oninput={dispatch.input_mut(|selected_opportunity, text| selected_opportunity.name = text)} class={classes!("input",is_valid("name", &selected_opportunity))} type="text" placeholder="Name"/>
+                                </div>
+                                <p class="help is-danger">{validation_message("name", &selected_opportunity)}</p>
                             </div>
-                            <p class="help is-danger">{validation_message("name", &selected_opportunity)}</p>
-                        </div>
 
-                        <div class="field">
-                            <label class="label">{"Status"}</label>
-                            <div class="control">
-                            <div class="select is-fullwidth">
-                            <select >
-                              <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::New))} selected={selected_option(OpportunityStatus::New)} text={format!("{}", OpportunityStatus::New)}>{"New"}</option>
-                              <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::ClosedWon))} selected={selected_option(OpportunityStatus::ClosedWon)} value={format!("{}", OpportunityStatus::ClosedWon)}>{"Closed Won"}</option>
-                              <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::ClosedLost))} selected={selected_option(OpportunityStatus::ClosedLost)} value={format!("{}", OpportunityStatus::ClosedLost)}>{"Closed Lost"}</option>
-                            </select>
-                          </div>
+                            <div class="field">
+                                <label class="label">{"Status"}</label>
+                                <div class="control">
+                                <div class="select is-fullwidth">
+                                <select >
+                                    <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::New))} selected={selected_option(OpportunityStatus::New)} text={format!("{}", OpportunityStatus::New)}>{"New"}</option>
+                                    <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::ClosedWon))} selected={selected_option(OpportunityStatus::ClosedWon)} value={format!("{}", OpportunityStatus::ClosedWon)}>{"Closed Won"}</option>
+                                    <option onclick={dispatch.reduce_mut_callback(|state| state.status = format!("{}", OpportunityStatus::ClosedLost))} selected={selected_option(OpportunityStatus::ClosedLost)} value={format!("{}", OpportunityStatus::ClosedLost)}>{"Closed Lost"}</option>
+                                </select>
+                                </div>
+                                </div>
+                                <p class="help is-danger"></p>
                             </div>
-                            <p class="help is-danger"></p>
-                        </div>
-                    </section>
-                <footer class="modal-card-foot">
-                    <button disabled={submit_disabled(&dispatch.get())} onclick={&update(dispatch.get())} class="button is-success">{"Save changes"}</button>
-                    <button onclick={&close_modal} class="button">{"Cancel"}</button>
-                </footer>
-            </div>
+                        </section>
+                    <footer class="modal-card-foot">
+                        <button disabled={submit_disabled(&dispatch.get())} onclick={&update(dispatch.get())} class="button is-success">{"Save changes"}</button>
+                        <button onclick={&close_modal} class="button">{"Cancel"}</button>
+                    </footer>
+                </div>
             </div>
 
             <div class="field is-grouped">
                 <div class="control">
-                <button onclick={add_opportunity} class="button is-link">{"Add opportunity"}</button>
+                    <button onclick={add_opportunity} class="button is-link">{"Add opportunity"}</button>
                 </div>
             </div>
                 <table class="table is-fullwidth">
@@ -294,15 +297,14 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
                     }).collect::<Html>()
                 }
                 </tbody>
-                </table>
-            </>
+            </table>
+        } else {
+            if opportunities.error.is_some() {
+                <ComponentError />
+            }else{
+                <Progress/>
+            }
         }
-    } else {
-        if !opportunities.loading {
-            opportunities.run();
-        }
-        html! {
-            <Progress/>
-        }
+        </>
     }
 }

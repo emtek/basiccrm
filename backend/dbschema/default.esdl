@@ -18,6 +18,7 @@ module default {
     multi link opportunities -> Opportunity {
         constraint exclusive;
         on target delete allow;
+        on source delete delete target;
     }
  }
 

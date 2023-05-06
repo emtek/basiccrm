@@ -4,7 +4,7 @@ use edgedb_derive::Queryable;
 use reqwest::header::{ACCEPT, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use validator::Validate;
+use validator::{Validate, ValidationError};
 use yew::Properties;
 use yewdux::store::Store;
 
@@ -73,14 +73,28 @@ pub struct CustomersQueryParams {
     pub limit: usize,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Queryable)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Queryable, Validate)]
 #[edgedb(json)]
 pub struct Customer {
     pub id: CustomerId,
+    #[validate(length(min = 3, max = 300, message = "Must be longer than 3 characters"))]
     pub name: String,
+    #[validate(email)]
     pub email: String,
     pub status: String,
     pub created: String,
+}
+
+fn valid_opportunity_status(status: &str) -> Result<(), ValidationError> {
+    match status {
+        "New" => Ok(()),
+        "ClosedWon" => Ok(()),
+        "ClosedLost" => Ok(()),
+        _ => Err(ValidationError {
+            message: Some("Please enter a valid status".into()),
+            ..ValidationError::new("status")
+        }),
+    }
 }
 
 #[derive(
@@ -91,6 +105,7 @@ pub struct Opportunity {
     pub id: OpportunityId,
     #[validate(length(min = 3, max = 300, message = "Must be longer than 3 characters"))]
     pub name: String,
+    #[validate(custom = "valid_opportunity_status")]
     pub status: String,
     pub created: String,
 }
