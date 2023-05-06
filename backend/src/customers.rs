@@ -15,7 +15,7 @@ use validator::Validate;
 pub fn customer_routes() -> Router<Client> {
     Router::new()
         .route("/customers", get(customers))
-        .route("/customer/:id", get(customer))
+        .route("/customer/:id", get(customer).put(update_customer))
         .route(
             "/customer/:id/opportunities",
             get(opportunities).post(add_opportunity),
@@ -64,6 +64,41 @@ async fn customer(State(db): State<Client>, Path(id): extract::Path<CustomerId>)
         .await
         .expect("Failed to query");
     (Json(result)).into_response()
+}
+
+async fn update_customer(
+    State(db): State<Client>,
+    Path(id): extract::Path<CustomerId>,
+    Json(body): extract::Json<Customer>,
+) -> Response {
+    if body.id.ne(&id) {
+        return (StatusCode::BAD_REQUEST).into_response();
+    }
+    match body.validate() {
+        Err(_) => (StatusCode::BAD_REQUEST).into_response(),
+        Ok(_) => {
+            let _: Value = db
+                .query_required_single(
+                    r#"
+                    select <json>(
+                        update Customer filter Customer.id = <uuid>$0
+                        set{
+                            status := <str>$1,
+                        }) 
+                        {
+                            id,
+                            name,
+                            email,
+                            status,
+                            created
+                        };"#,
+                    &(body.id, body.status),
+                )
+                .await
+                .expect("Failed to update");
+            (StatusCode::OK).into_response()
+        }
+    }
 }
 
 async fn add_opportunity(
@@ -159,7 +194,7 @@ mod tests {
     use serde::de::DeserializeOwned;
 
     use super::*;
-    const TEST_EMAIL_DOMAIN: &str = "@test_email.com";
+    const TEST_EMAIL_DOMAIN: &str = "@test.email.com";
 
     async fn add_customer(db: &Client, customer: Customer) -> Result<Customer, Error> {
         db.query_required_single(
@@ -236,8 +271,42 @@ mod tests {
         )
         .await
         .expect("Failed to add");
+
         let remove = remove_customer(&db, customer.id).await;
         assert_eq!(true, remove.is_ok());
+    }
+
+    #[tokio::test]
+    async fn update_valid_customer_should_succeed() {
+        let db = get_db().await;
+        let random_string = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+        let added_customer = add_customer(
+            &db,
+            Customer {
+                name: format!("Test {}", random_string),
+                email: format!("{}{}", random_string, TEST_EMAIL_DOMAIN),
+                status: "Active".to_string(),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("Failed to add");
+        let update_result = update_customer(
+            State(db.clone()),
+            Path(added_customer.id),
+            Json(Customer {
+                id: added_customer.id,
+                status: "Lead".to_string(),
+                ..added_customer
+            }),
+        )
+        .await;
+        let updated_customer = customer(State(db.clone()), Path(added_customer.id)).await;
+        let _ = remove_customer(&db, added_customer.id).await;
+        let updated_customer = into_type::<Customer>(updated_customer).await;
+
+        assert_eq!(StatusCode::OK, update_result.status());
+        assert_eq!("Lead".to_string(), updated_customer.status);
     }
 
     #[tokio::test]
@@ -292,6 +361,62 @@ mod tests {
         assert_eq!(
             format!("Opportunity {}", random_string),
             results.first().unwrap().name
+        );
+    }
+
+    #[tokio::test]
+    async fn update_opportunity_should_succeed() {
+        let db = get_db().await;
+        let random_string = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+        let customer = add_customer(
+            &db,
+            Customer {
+                name: format!("Test {}", random_string),
+                email: format!("{}{}", random_string, TEST_EMAIL_DOMAIN),
+                status: "Active".to_string(),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("Failed to add");
+        let response = add_opportunity(
+            State(db.clone()),
+            Path(customer.id),
+            Json(Opportunity {
+                name: format!("Opportunity {}", random_string),
+                status: "New".to_string(),
+                ..Default::default()
+            }),
+        )
+        .await;
+        assert_eq!(StatusCode::OK, response.status());
+        let added_opportunities = opportunities(State(db.clone()), Path(customer.id)).await;
+        let results = into_type::<Vec<Opportunity>>(added_opportunities).await;
+        let update_response = update_opportunity(
+            State(db.clone()),
+            Path((customer.id, results.first().unwrap().id)),
+            Json(Opportunity {
+                id: results.first().unwrap().id,
+                name: "Updated Name".to_string(),
+                status: "ClosedWon".to_string(),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+        let updated_opportunities = opportunities(State(db.clone()), Path(customer.id)).await;
+
+        let _ = remove_customer(&db, customer.id).await;
+        let update_result = into_type::<Vec<Opportunity>>(updated_opportunities).await;
+        assert_eq!(StatusCode::OK, update_response.status());
+        assert_eq!(1, update_result.len());
+        assert_eq!(
+            "Updated Name".to_string(),
+            update_result.first().unwrap().name
+        );
+        assert_eq!(
+            "ClosedWon".to_string(),
+            update_result.first().unwrap().status
         );
     }
 

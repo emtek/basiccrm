@@ -119,7 +119,7 @@ pub fn customer_detail(props: &CustomerDetailProps) -> Html {
 #[function_component(CustomerOpportunitiesList)]
 pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
     let id = props.id.clone();
-    let opportunities = use_async_with_options(
+    let opportunities: UseAsyncHandle<Vec<Opportunity>, MultiError> = use_async_with_options(
         async move { get_data(format!("/customer/{}/opportunities", id)).await },
         UseAsyncOptions::enable_auto(),
     );
@@ -134,7 +134,7 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
     };
     let update = |opportunity: Rc<Opportunity>| {
         let reload_list = opportunities.clone();
-        let o = opportunity.clone();
+        let o: Rc<Opportunity> = opportunity.clone();
         let customer_id = id.clone();
         let current_modal_state = modal_open.clone();
         dispatch.reduce_mut_future_callback(move |_| {
@@ -146,7 +146,6 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
                     if let Ok(_) =
                         post_data(format!("/customer/{}/opportunities", customer_id), op).await
                     {
-                        reload.update(vec![Opportunity::default()]);
                         modal.set(false);
                         reload.run();
                     }
@@ -157,7 +156,6 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
                     )
                     .await
                     {
-                        reload.update(vec![Opportunity::default()]);
                         modal.set(false);
                         reload.run();
                     }
@@ -182,7 +180,6 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
                 ))
                 .await
                 {
-                    reload.update(vec![Opportunity::default()]);
                     modal.set(false);
                     reload.run();
                 }
@@ -205,8 +202,8 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
         status: format!("{}", OpportunityStatus::New),
         ..Opportunity::default()
     });
-    fn modal_label(name: String) -> String {
-        match name.clone().eq(&String::default()) {
+    fn modal_label(id: OpportunityId) -> String {
+        match id.clone().eq(&Uuid::default()) {
             true => "Create".to_string(),
             false => "Edit".to_string(),
         }
@@ -231,7 +228,7 @@ pub fn customer_opportunities_list(props: &CustomerDetailProps) -> Html {
                 <div class="modal-background"></div>
                 <div class="modal-card">
                     <header class="modal-card-head">
-                        <p class="modal-card-title">{modal_label(selected_opportunity.clone().name.clone())}</p>
+                        <p class="modal-card-title">{modal_label(selected_opportunity.clone().id.clone())}</p>
                         <button onclick={&close_modal} class="delete" aria-label="close"></button>
                     </header>
                         <section class="modal-card-body">

@@ -75,7 +75,7 @@ async fn main() {
         .with_target("tower_http::trace::on_request", tracing::Level::TRACE)
         .with_target("tower_http::trace::on_failure", tracing::Level::ERROR)
         .with_target("hyper", tracing::Level::ERROR)
-        .with_default(tracing::Level::INFO);
+        .with_default(tracing::Level::TRACE);
     let layer = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stdout)
         .with_filter(filter.clone());
