@@ -98,14 +98,14 @@ The docker image should be able to be deployed anywhere but you will need an edg
 
 ## 📝 Lessons
 
-- Next time I would just use a react component library or similar fullstack create-react-app style application. Some of the ui interaction stuff is a little buggy or hard to use.
-- This is probably not appropriate for dev teams without prior knowledge but it's going to catch up soon.
+- Just use a component library for the frontend, I wanted to see how well Yew works but didn't find decent component libraries so hooking up the ui was harder than it needed to be.
+- There are also a bunch of SSR frameworks which would be suitable for this.
 
 ## ⚒️ TODO
 
+- Status filtering and update for customers needs to be hooked up on the frontend.
 - Hook up CI/CD with Github actions.
 - Run DB migrations on startup.
 - Get full stacktraces in Honeycomb when an error is thrown at the moment it's only the first message.
-- More tests.
-- Add some seed data for testing.
+- Frontend tests.
 - Authentication/Authorization to track users and prevent missuse.
