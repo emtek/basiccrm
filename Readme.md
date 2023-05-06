@@ -73,6 +73,26 @@ Updates to the schema can be made and migrations applied with the following comm
 
 ![data model](.attachments/2023-05-05-15-36-14.png)
 
+## Testing
+
+The tests only cover the backend at the moment which ensures the mapping between the db and the frontend types is valid and ensures validation is working.
+
+Setup the local db
+
+`cd backend`
+
+`edgedb project init`
+
+`edgedb migrate`
+
+Run the tests
+
+`cargo test`
+
+Run tests with code coverage (Note you will need to install tarpaulin first)
+
+`cargo tarpaulin --ignore-tests --out Lcov`
+
 ## Hosting/deployment
 
 ---
