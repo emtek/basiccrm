@@ -1,7 +1,5 @@
 use yew::prelude::*;
 
-use crate::components::nav_bar::Navbar;
-
 #[function_component(ComponentError)]
 pub fn component_error() -> Html {
     html! {
